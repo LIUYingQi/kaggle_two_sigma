@@ -5,6 +5,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import StratifiedKFold
 import random
 from math import exp
+from sklearn.naive_bayes import MultinomialNB
 import xgboost as xgb
 import cPickle as pickle
 random.seed(321)
@@ -115,9 +116,9 @@ def transform_data(X):
     X["num_photos"] = X["photos"].apply(len)
     X['created'] = pd.to_datetime(X["created"])
     X["num_description_words"] = X["description"].apply(lambda x: len(x.split(" ")))
-    X['price_per_bed'] = X['price'] / X['bedrooms']
-    X['price_per_bath'] = X['price'] / X['bathrooms']
-    X['price_per_room'] = X['price'] / (X['bathrooms'] + X['bedrooms'])
+    X['price_per_bed'] = X['price'] / (X['bedrooms']+0.5)
+    X['price_per_bath'] = X['price'] / (X['bathrooms']+0.5)
+    X['price_per_room'] = X['price'] / ((X['bathrooms'] + X['bedrooms'])+0.5)
 
     X['low'] = 0
     X.loc[X['interest_level'] == 0, 'low'] = 1
@@ -205,42 +206,76 @@ for item in zip(dtypes,columns):
 
 print X_train
 
-print("Start fitting...")
 
-param = {}
-param['objective'] = 'multi:softprob'
-param['eta'] = 0.02
-param['max_depth'] = 4
-param['silent'] = 1
-param['num_class'] = 3
-param['eval_metric'] = "mlogloss"
-param['min_child_weight'] = 1
-param['subsample'] = 0.7
-param['colsample_bytree'] = 0.7
-param['seed'] = 321
-param['nthread'] = 8
-num_rounds = 2000
+def find_strange_latitude(lat):
+    if lat<40.5 or lat>40.9:
+        return 40.74875
+    else:
+        return lat
 
-xgtrain = xgb.DMatrix(X_train, label=y)
+def find_strange_longitude(lon):
+    if lon>-73.6 or lon<-74.6:
+        return -73.968
+    else:
+        return lon
 
-res = xgb.cv(param, xgtrain, num_rounds,nfold=5)
-print res
+X_train["latitude"] = X_train["latitude"].apply(find_strange_latitude)
+X_train["longitude"] = X_train["longitude"].apply(find_strange_longitude)
 
-f = open("res_ha.pkl","w")
-pickle.dump(res,f)
+X_train["latitude"] = X_train["latitude"].apply(find_strange_latitude)
+X_train["longitude"] = X_train["longitude"].apply(find_strange_longitude)
 
+test_dtypes,test_columns = X_test.dtypes,X_test.columns
+train_dtypes,train_columns = X_train.dtypes,X_train.columns
 
-# print("Fitted")
+for i in range(len(train_dtypes)):
+    print (train_columns[i],train_dtypes[i])
+    print (test_columns[i],test_dtypes[i])
+
+print X_train.describe()
+print X_test.describe()
+
+# bayes test
+clf = MultinomialNB()
+clf.fit(X_train.values,y)
+preds = clf.predict_proba(X_test)
+
+# print("Start fitting...")
 #
+# param = {}
+# param['objective'] = 'multi:softprob'
+# param['eta'] = 0.02
+# param['max_depth'] = 4
+# param['silent'] = 1
+# param['num_class'] = 3
+# param['eval_metric'] = "mlogloss"
+# param['min_child_weight'] = 1
+# param['subsample'] = 0.7
+# param['colsample_bytree'] = 0.7
+# param['seed'] = 321
+# param['nthread'] = 8
+# num_rounds = 2000
 #
-# def prepare_submission(model):
-#     xgtest = xgb.DMatrix(X_test)
-#     preds = model.predict(xgtest)
-#     sub = pd.DataFrame(data={'listing_id': X_test['listing_id'].ravel()})
-#     sub['low'] = preds[:, 0]
-#     sub['medium'] = preds[:, 1]
-#     sub['high'] = preds[:, 2]
-#     sub.to_csv("submission.csv", index=False, header=True)
+# xgtrain = xgb.DMatrix(X_train, label=y)
 #
-#
-# prepare_submission(clf)
+# res = xgb.cv(param, xgtrain, num_rounds,nfold=5)
+# print res
+
+# f = open("res_ha.pkl","w")
+# pickle.dump(res,f)
+
+
+print("Fitted")
+
+
+def prepare_submission(model):
+    xgtest = xgb.DMatrix(X_test)
+    preds = model.predict(xgtest)
+    sub = pd.DataFrame(data={'listing_id': X_test['listing_id'].ravel()})
+    sub['low'] = preds[:, 0]
+    sub['medium'] = preds[:, 1]
+    sub['high'] = preds[:, 2]
+    sub.to_csv("submission.csv", index=False, header=True)
+
+
+prepare_submission(clf)
