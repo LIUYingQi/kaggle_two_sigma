@@ -363,48 +363,31 @@ print train_df.dtypes
 print test_df.dtypes
 print len(y)
 
-# GMM test
-# train_x, test_x, train_y, test_y = train_test_split(train_df.values,y,test_size=0.2)
-# clf = GaussianMixture()
-# clf.fit(train_x,train_y)
-# preds = clf.predict_proba(test_x)
-# print("Fitted")
-# print log_loss(test_y,preds)
-# print preds
-# sub = pd.DataFrame(data={'listing_id': test_df['listing_id'].ravel()})
-# sub['low'] = preds[:, 0]
-# sub['medium'] = preds[:, 1]
-# sub['high'] = preds[:, 2]
-# sub.to_csv("submission.csv", index=False, header=True)
-
 # CV
-param = {}
-param['objective'] = 'multi:softprob'
-param['eta'] = 0.02
-param['max_depth'] = 9
-param['min_child_weight'] = 5
-param['gamma'] = 0.2
-param['reg_alpha'] = 0.3
-param['silent'] = 1
-param['num_class'] = 3
-param['eval_metric'] = "mlogloss"
-param['min_child_weight'] = 1
-param['subsample'] = 0.8
-param['colsample_bytree'] = 0.8
-param['seed'] = 5
-num_rounds = 1500
-#
-xgtrain = xgb.DMatrix(train_df, label=y)
-
-#   CV
-res = xgb.cv(param, xgtrain, num_rounds,nfold=5,metrics='mlogloss')
-print res
-f = open("res.pkl","w")
-pickle.dump(res,f)
-
-# ps may be subsample and colsample_bytree should be reduced   do a CV if have time
+###################################################################3
+# param = {}
+# param['objective'] = 'multi:softprob'
+# param['eta'] = 0.02
+# param['max_depth'] = 9
+# param['min_child_weight'] = 5
+# param['gamma'] = 0.2
+# param['reg_alpha'] = 0.3
+# param['silent'] = 1
+# param['num_class'] = 3
+# param['eval_metric'] = "mlogloss"
+# param['min_child_weight'] = 1
+# param['subsample'] = 0.8
+# param['colsample_bytree'] = 0.8
+# param['seed'] = 5
+# num_rounds = 1500
+# xgtrain = xgb.DMatrix(train_df, label=y)
+# res = xgb.cv(param, xgtrain, num_rounds,nfold=5,metrics='mlogloss')
+# print res
+# f = open("res.pkl","w")
+# pickle.dump(res,f)
 
 # grid search
+################################################################
 # cv_params = {'reg_alpha': [0.05,0.1,0.3,0.5,0.7]}
 # ind_params = {'learning_rate': 0.02,
 #               'n_estimators': 688,
@@ -422,18 +405,35 @@ pickle.dump(res,f)
 # print optimized_GBM.best_estimator_
 # print optimized_GBM.best_params_
 
-# clf = xgb.train(param, xgtrain, num_rounds)
-#
-# print("Fitted")
-#
-# def prepare_submission(model):
-#     xgtest = xgb.DMatrix(test_df)
-#     preds = model.predict(xgtest)
-#     print preds
-#     sub = pd.DataFrame(data={'listing_id': test_df['listing_id'].ravel()})
-#     sub['low'] = preds[:, 0]
-#     sub['medium'] = preds[:, 1]
-#     sub['high'] = preds[:, 2]
-#     sub.to_csv("submission.csv", index=False, header=True)
-#
-# prepare_submission(clf)
+# generating submission file
+####################################################################
+
+param = {}
+param['objective'] = 'multi:softprob'
+param['eta'] = 0.02
+param['max_depth'] = 9
+param['min_child_weight'] = 5
+param['gamma'] = 0.2
+param['reg_alpha'] = 0.3
+param['silent'] = 1
+param['num_class'] = 3
+param['eval_metric'] = "mlogloss"
+param['min_child_weight'] = 1
+param['subsample'] = 0.8
+param['colsample_bytree'] = 0.8
+param['seed'] = 5
+num_rounds = 638
+xgtrain = xgb.DMatrix(train_df, label=y)
+clf = xgb.train(param, xgtrain, num_rounds)
+
+print("Fitted")
+def prepare_submission(model):
+    xgtest = xgb.DMatrix(test_df)
+    preds = model.predict(xgtest)
+    print preds
+    sub = pd.DataFrame(data={'listing_id': test_df['listing_id'].ravel()})
+    sub['low'] = preds[:, 0]
+    sub['medium'] = preds[:, 1]
+    sub['high'] = preds[:, 2]
+    sub.to_csv("submission.csv", index=False, header=True)
+prepare_submission(clf)

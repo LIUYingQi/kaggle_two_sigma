@@ -7,22 +7,22 @@ import cPickle as pkl
 
 train_df = pd.read_json(open("input/train.json", "r"))
 test_df = pd.read_json(open("input/test.json", "r"))
-train_df = pd.concat([train_df, test_df], 0)
+df = pd.concat([train_df, test_df], 0)
 
 # find all not rare features
-train_df["features"] = train_df["features"].astype('str').str.replace("[","")
-train_df["features"] = train_df["features"].str.replace("u","")
-train_df["features"] = train_df["features"].str.replace("'","")
-train_df["features"] = train_df["features"].str.replace("\"","")
-train_df["features"] = train_df["features"].str.replace("!","")
-train_df["features"] = train_df["features"].str.replace("]","")
-train_df["features"] = train_df["features"].str.split(",")
-train_df["features"] = train_df[["features"]].apply(lambda line: [list(map(str.strip, map(str.lower, x))) for x in line])
-features = train_df["features"]
+df["features"] = df["features"].astype('str').str.replace("[","")
+df["features"] = df["features"].str.replace("u","")
+df["features"] = df["features"].str.replace("'","")
+df["features"] = df["features"].str.replace("\"","")
+df["features"] = df["features"].str.replace("!","")
+df["features"] = df["features"].str.replace("]","")
+df["features"] = df["features"].str.split(",")
+df["features"] = df[["features"]].apply(lambda line: [list(map(str.strip, map(str.lower, x))) for x in line])
+features = df["features"]
 feature_counts = Counter()
 for feature in features:
     feature_counts.update(feature)
-feature_list = sorted([k for (k,v) in feature_counts.items() if v > 10])  # 5 as threshold for rare feature
+feature_list = sorted([k for (k,v) in feature_counts.items() if v > 5])  # 5 as threshold for rare feature
 print feature_list
 
 # merge duplicated features into a dict

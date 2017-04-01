@@ -5,7 +5,9 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import StratifiedKFold
 import random
 from math import exp
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import log_loss
 import xgboost as xgb
 import cPickle as pickle
 random.seed(321)
@@ -29,13 +31,11 @@ low_count = len(X_train[X_train['interest_level'] == 0])
 medium_count = len(X_train[X_train['interest_level'] == 1])
 high_count = len(X_train[X_train['interest_level'] == 2])
 
-
 def find_objects_with_only_one_record(feature_name):
     temp = pd.concat([X_train[feature_name].reset_index(),
                       X_test[feature_name].reset_index()])
     temp = temp.groupby(feature_name, as_index=False).count()
     return temp[temp['index'] == 1]
-
 
 managers_with_one_lot = find_objects_with_only_one_record('manager_id')
 buildings_with_one_lot = find_objects_with_only_one_record('building_id')
@@ -46,7 +46,6 @@ k = 5.0
 f = 1.0
 r_k = 0.01
 g = 1.0
-
 
 def categorical_average(variable, y, pred_0, feature_name):
     def calculate_average(sub1, sub2):
@@ -71,14 +70,12 @@ def categorical_average(variable, y, pred_0, feature_name):
         else:
             tmp['beta'] = tmp.apply(compute_beta, axis=1)
 
-        tmp['adj_avg'] = tmp.apply(lambda row: (1.0 - row['beta']) * row['avgY'] + row['beta'] * row['pred_0'],
-                                   axis=1)
+        tmp['adj_avg'] = tmp.apply(lambda row: (1.0 - row['beta']) * row['avgY'] + row['beta'] * row['pred_0'],axis=1)
 
         tmp.loc[pd.isnull(tmp['avgY']), 'avgY'] = tmp.loc[pd.isnull(tmp['avgY']), 'pred_0']
         tmp.loc[pd.isnull(tmp['adj_avg']), 'adj_avg'] = tmp.loc[pd.isnull(tmp['adj_avg']), 'pred_0']
         tmp['random'] = np.random.uniform(size=len(tmp))
-        tmp['adj_avg'] = tmp.apply(lambda row: row['adj_avg'] * (1 + (row['random'] - 0.5) * r_k),
-                                   axis=1)
+        tmp['adj_avg'] = tmp.apply(lambda row: row['adj_avg'] * (1 + (row['random'] - 0.5) * r_k),axis=1)
 
         return tmp['adj_avg'].ravel()
 
@@ -94,12 +91,8 @@ def categorical_average(variable, y, pred_0, feature_name):
         X_train.loc[cv_index, feature_name] = calculate_average(sub1, sub2)
 
     # for test set
-    sub1 = pd.DataFrame(data={variable: X_train[variable],
-                              'y': X_train[y],
-                              'pred_0': X_train[pred_0]})
-    sub2 = pd.DataFrame(data={variable: X_test[variable],
-                              'y': X_test[y],
-                              'pred_0': X_test[pred_0]})
+    sub1 = pd.DataFrame(data={variable: X_train[variable],'y': X_train[y],'pred_0': X_train[pred_0]})
+    sub2 = pd.DataFrame(data={variable: X_test[variable],'y': X_test[y],'pred_0': X_test[pred_0]})
     X_test.loc[:, feature_name] = calculate_average(sub1, sub2)
 
 
@@ -140,7 +133,7 @@ def transform_data(X):
           'building_id'] = "-1"
     X.loc[X['display_address'].isin(addresses_with_one_lot['display_address'].ravel()),
           'display_address'] = "-1"
-
+                                                                                  ################  this one!
     return X
 
 
@@ -149,6 +142,7 @@ def normalize_high_cordiality_data():
     for c in high_cardinality:
         categorical_average(c, "medium", "pred0_medium", c + "_mean_medium")
         categorical_average(c, "high", "pred0_high", c + "_mean_high")
+        categorical_average(c, "low", "pred0_low", c + "_mean_low")
 
 
 def transform_categorical_data():
@@ -234,12 +228,32 @@ for i in range(len(train_dtypes)):
 
 print X_train.describe()
 print X_test.describe()
+print y
 
-# bayes test
-clf = MultinomialNB()
-clf.fit(X_train.values,y)
-preds = clf.predict_proba(X_test)
+print X_train.loc[:,['listing_id','building_id_mean_medium','building_id_mean_high','manager_id_mean_medium','manager_id_mean_high']]
 
+f = open('train_id_proba_features.pkl','w')
+pickle.dump(X_train.loc[:,['listing_id','building_id_mean_low','building_id_mean_medium','building_id_mean_high','manager_id_mean_low','manager_id_mean_medium','manager_id_mean_high']],f)
+f.close()
+
+f = open('test_id_proba_features.pkl','w')
+pickle.dump(X_test.loc[:,['listing_id','building_id_mean_low','building_id_mean_medium','building_id_mean_high','manager_id_mean_low','manager_id_mean_medium','manager_id_mean_high']],f)
+f.close()
+
+# RF test
+train_x, test_x, train_y, test_y = train_test_split(X_train.values,y,test_size=0.2)
+clf = RandomForestClassifier(n_estimators=50,max_depth=15)
+clf.fit(train_x,train_y)
+preds = clf.predict_proba(test_x)
+print("Fitted")
+print log_loss(test_y,preds)
+print preds
+sub = pd.DataFrame(data={'listing_id': X_test['listing_id'].ravel()})
+sub['low'] = preds[:, 0]
+sub['medium'] = preds[:, 1]
+sub['high'] = preds[:, 2]
+sub.to_csv("submission.csv", index=False, header=True)
+#
 # print("Start fitting...")
 #
 # param = {}
@@ -257,25 +271,25 @@ preds = clf.predict_proba(X_test)
 # num_rounds = 2000
 #
 # xgtrain = xgb.DMatrix(X_train, label=y)
+# clf = xgb.XGBClassifier()
 #
-# res = xgb.cv(param, xgtrain, num_rounds,nfold=5)
-# print res
-
-# f = open("res_ha.pkl","w")
-# pickle.dump(res,f)
-
-
-print("Fitted")
-
-
-def prepare_submission(model):
-    xgtest = xgb.DMatrix(X_test)
-    preds = model.predict(xgtest)
-    sub = pd.DataFrame(data={'listing_id': X_test['listing_id'].ravel()})
-    sub['low'] = preds[:, 0]
-    sub['medium'] = preds[:, 1]
-    sub['high'] = preds[:, 2]
-    sub.to_csv("submission.csv", index=False, header=True)
-
-
-prepare_submission(clf)
+# # res = xgb.cv(param, xgtrain, num_rounds,nfold=5)
+# # print res
+# # f = open("res_ha.pkl","w")
+# # pickle.dump(res,f)
+#
+#
+# print("Fitted")
+#
+#
+# def prepare_submission(model):
+#     xgtest = xgb.DMatrix(X_test)
+#     preds = model.predict(xgtest)
+#     sub = pd.DataFrame(data={'listing_id': X_test['listing_id'].ravel()})
+#     sub['low'] = preds[:, 0]
+#     sub['medium'] = preds[:, 1]
+#     sub['high'] = preds[:, 2]
+#     sub.to_csv("submission.csv", index=False, header=True)
+#
+#
+# prepare_submission(clf)
