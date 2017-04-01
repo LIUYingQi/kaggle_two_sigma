@@ -350,11 +350,11 @@ from sklearn.mixture import GaussianMixture
 ##############################################################################
 
 print "fitting..."
-train_df_f = open("train_df.pkl","rb")
+train_df_f = open("pkl_files/train_df.pkl","rb")
 train_df = pickle.load(train_df_f)
-test_df_f = open("test_df.pkl",'rb')
+test_df_f = open("pkl_files/test_df.pkl",'rb')
 test_df = pickle.load(test_df_f)
-y_f = open("label.pkl",'rb')
+y_f = open("pkl_files/label.pkl",'rb')
 y = pickle.load(y_f)
 train_df_f.close()
 test_df_f.close()

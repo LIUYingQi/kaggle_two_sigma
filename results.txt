@@ -1,0 +1,3 @@
+baseline,score
+baseline_xgboost_1,0.54280
+baseline_xgboost_2,0.54001
