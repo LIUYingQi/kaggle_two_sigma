@@ -365,83 +365,31 @@ print len(y)
 
 # CV
 ###################################################################3
-# param = {}
-# param['objective'] = 'multi:softprob'
-# param['eta'] = 0.02
-# param['max_depth'] = 9
-# param['min_child_weight'] = 5
-# param['gamma'] = 0.2
-# param['reg_alpha'] = 0.3
-# param['silent'] = 1
-# param['num_class'] = 3
-# param['eval_metric'] = "mlogloss"
-# param['min_child_weight'] = 1
-# param['subsample'] = 0.8
-# param['colsample_bytree'] = 0.8
-# param['seed'] = 5
-# num_rounds = 1500
-# xgtrain = xgb.DMatrix(train_df, label=y)
-# res = xgb.cv(param, xgtrain, num_rounds,nfold=5,metrics='mlogloss')
-# print res
-# f = open("res.pkl","w")
-# pickle.dump(res,f)
 
-# grid search
-################################################################
-# cv_params = {'reg_alpha': [0.05,0.1,0.3,0.5,0.7]}
-# ind_params = {'learning_rate': 0.02,
-#               'n_estimators': 688,
-#               'seed':15,
-#               'gamma':0.2,
-#               'max_depth':9,
-#               'min_child_weight':5,
-#               'subsample':0.8,
-#               'colsample_bytree':0.8,
-#               'reg_alpha':0.3,
-#               'objective': 'multi:softprob'}
-# optimized_GBM = GridSearchCV(xgb.XGBClassifier(**ind_params),cv_params,scoring = 'log_loss', cv = 5, n_jobs = -1)
-# optimized_GBM.fit(train_df.values,y)
-# print optimized_GBM.cv_results_
-# print optimized_GBM.best_estimator_
-# print optimized_GBM.best_params_
-
-# generating submission file
 ####################################################################
-# param = {}
-# param['objective'] = 'multi:softprob'
-# param['eta'] = 0.02
-# param['max_depth'] = 9
-# param['min_child_weight'] = 5
-# param['gamma'] = 0.2
-# param['reg_alpha'] = 0.3
-# param['silent'] = 1
-# param['num_class'] = 3
-# param['eval_metric'] = "mlogloss"
-# param['subsample'] = 0.8
-# param['colsample_bytree'] = 0.8
-# param['seed'] = 5
-# num_rounds = 638
-# xgtrain = xgb.DMatrix(train_df, label=y)
-# clf = xgb.train(param, xgtrain, num_rounds)
+
+# X_train, X_test, y_train, y_test = train_test_split(train_df, y, test_size=0.3, random_state=42)
+# clf = RandomForestClassifier(n_estimators=400)
+# clf.fit(X_train,y_train)
+# preds = clf.predict_proba(X_test)
+# res = log_loss(y_test,preds)
+# print res
 #
 # print("Fitted")
-# def prepare_submission(model):
-#     xgtest = xgb.DMatrix(test_df)
-#     preds = model.predict(xgtest)
-#     print preds
-#     sub = pd.DataFrame(data={'listing_id': test_df['listing_id'].ravel()})
-#     sub['low'] = preds[:, 0]
-#     sub['medium'] = preds[:, 1]
-#     sub['high'] = preds[:, 2]
-#     sub.to_csv("submission.csv", index=False, header=True)
-# prepare_submission(clf)
+# preds = clf.predict_proba(test_df)
+# print preds
+# sub = pd.DataFrame(data={'listing_id': test_df['listing_id'].ravel()})
+# sub['low'] = preds[:, 0]
+# sub['medium'] = preds[:, 1]
+# sub['high'] = preds[:, 2]
+# sub.to_csv("results/baseline_RF_1.csv", index=False, header=True)
 
 # generating stacking file
 ####################################################################
 train_df = train_df.values
 test_df = test_df.values
 
-clf = XGBClassifier(max_depth=9,learning_rate=0.02,n_estimators=638,objective='multi:softprob',gamma=0.2,min_child_weight=5,subsample=0.8,colsample_bytree=0.8,reg_alpha=0.3)
+clf = RandomForestClassifier(n_estimators=30)
 
 stacking_values = np.zeros((len(y),3),dtype=float)
 
@@ -456,3 +404,6 @@ for i,(train,test) in enumerate(skf):
     clf.fit(X_train, y_train)
     y_submission = clf.predict_proba(X_test)
     stacking_values[test] = y_submission
+
+for i in stacking_values:
+    print i

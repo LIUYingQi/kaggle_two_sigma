@@ -1,3 +1,5 @@
 baseline,score
 baseline_xgboost_1,0.54280
 baseline_xgboost_2,0.54001
+baseline_RF_1,0.58039
+baseline_RF_2,0.58570

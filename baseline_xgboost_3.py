@@ -179,40 +179,40 @@ x_train = train_test_cv1_sparse[:ntrain, :]
 x_test = train_test_cv1_sparse[ntrain:, :]
 features += c_vect_sparse1_cols
 
-SEED = 777
-NFOLDS = 5
-
-params = {
-    'eta':.01,
-    'colsample_bytree':.8,
-    'subsample':.8,
-    'seed':0,
-    'nthread':16,
-    'objective':'multi:softprob',
-    'eval_metric':'mlogloss',
-    'num_class':3,
-    'silent':1
-}
-
-
-dtrain = xgb.DMatrix(data=x_train, label=y_train)
-dtest = xgb.DMatrix(data=x_test)
-
-
-bst = xgb.cv(params, dtrain, 10000, NFOLDS, early_stopping_rounds=50, verbose_eval=25)
-
-best_rounds = np.argmin(bst['test-mlogloss-mean'])
-
-bst = xgb.dtrain(params, dtrain, best_rounds)
-
-preds = bst.predict(dtest)
-
-preds = pd.Dataframe(preds)
-
-cols = ['high', 'medium', 'low']
-
-preds.columns = cols
-
-preds['listing_id'] = listing_id
-
-preds.to_csv('my_preds.csv', index=None)
+# SEED = 777
+# NFOLDS = 5
+#
+# params = {
+#     'eta':.01,
+#     'colsample_bytree':.8,
+#     'subsample':.8,
+#     'seed':0,
+#     'nthread':16,
+#     'objective':'multi:softprob',
+#     'eval_metric':'mlogloss',
+#     'num_class':3,
+#     'silent':1
+# }
+#
+#
+# dtrain = xgb.DMatrix(data=x_train, label=y_train)
+# dtest = xgb.DMatrix(data=x_test)
+#
+#
+# bst = xgb.cv(params, dtrain, 10000, NFOLDS, early_stopping_rounds=50, verbose_eval=25)
+#
+# best_rounds = np.argmin(bst['test-mlogloss-mean'])
+#
+# bst = xgb.dtrain(params, dtrain, best_rounds)
+#
+# preds = bst.predict(dtest)
+#
+# preds = pd.Dataframe(preds)
+#
+# cols = ['high', 'medium', 'low']
+#
+# preds.columns = cols
+#
+# preds['listing_id'] = listing_id
+#
+# preds.to_csv('my_preds.csv', index=None)
