@@ -6,11 +6,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
 
-def logloss(attempt, actual, epsilon=1.0e-15):
-    """Logloss, i.e. the score of the bioresponse competition.
-    """
-    attempt = np.clip(attempt, epsilon, 1.0-epsilon)
-    return - np.mean(actual * np.log(attempt) +(1.0 - actual) * np.log(1.0 - attempt))
+
 
 
 if __name__ == '__main__':
