@@ -216,3 +216,4 @@ features += c_vect_sparse1_cols
 # preds['listing_id'] = listing_id
 #
 # preds.to_csv('my_preds.csv', index=None)
+print 'hai hao ba ha ha ha'
