@@ -18,16 +18,16 @@ from sklearn.mixture import GaussianMixture
 # print "reading data......."
 # train_df = pd.read_json("input/train.json")
 # test_df = pd.read_json(open("input/test.json", "r"))
-
-###############################################################################
-# nature features
-# num_feature : bathrooms  bedrooms   price
-# computer vision : photos
-# location feature : latitude longitude  street_address  display_address
-# time feature : created
-# NLP : features description
-# ID_feature : listing_id  manager_id  building_id
-##############################################################################
+#
+# ##############################################################################
+# # nature features
+# # num_feature : bathrooms  bedrooms   price
+# # computer vision : photos
+# # location feature : latitude longitude  street_address  display_address
+# # time feature : created
+# # NLP : features description
+# # ID_feature : listing_id  manager_id  building_id
+# #############################################################################
 #
 # print "generating train set"
 #
@@ -65,7 +65,7 @@ from sklearn.mixture import GaussianMixture
 # ####################################################################################
 # print "location features"
 #
-# f = open('train_df_real_location.pkl','r')
+# f = open('pkl_files/train_df_real_location.pkl','r')
 # train_df_location = pickle.load(f)
 # f.close()
 #
@@ -180,7 +180,7 @@ from sklearn.mixture import GaussianMixture
 # train_df["single_manager_id"] = 0
 # train_df.loc[train_df['manager_id'].isin(managers_with_one_lot['manager_id'].ravel()),'single_manager_id'] = 1
 #
-# f = open('train_id_proba_features.pkl','r')
+# f = open('pkl_files/train_id_proba_features.pkl','r')
 # id_features = pickle.load(f)
 # f.close()
 # train_df = pd.merge(train_df,id_features,how='left',on='listing_id')
@@ -226,7 +226,7 @@ from sklearn.mixture import GaussianMixture
 # ####################################################################################
 # print "location features"
 #
-# f = open('test_df_real_location.pkl','r')
+# f = open('pkl_files/test_df_real_location.pkl','r')
 # test_df_location = pickle.load(f)
 # f.close()
 #
@@ -277,7 +277,7 @@ from sklearn.mixture import GaussianMixture
 # test_df["single_manager_id"] = 0
 # test_df.loc[test_df['manager_id'].isin(managers_with_one_lot['manager_id'].ravel()),'single_manager_id'] = 1
 #
-# f = open('test_id_proba_features.pkl','r')
+# f = open('pkl_files/test_id_proba_features.pkl','r')
 # id_features = pickle.load(f)
 # f.close()
 # test_df = pd.merge(test_df,id_features,on='listing_id')
@@ -333,15 +333,15 @@ from sklearn.mixture import GaussianMixture
 # print train_df.describe()
 # print test_df.describe()
 #
-# f_train_df = open("train_df_1.pkl",'wb')
+# f_train_df = open("pkl_files/train_df_1.pkl",'wb')
 # pickle.dump(train_df,f_train_df)
 # f_train_df.close()
 #
-# f_test_df = open("test_df_1.pkl",'wb')
+# f_test_df = open("pkl_files/test_df_1.pkl",'wb')
 # pickle.dump(test_df,f_test_df)
 # f_test_df.close()
 #
-# f_y = open("label_1.pkl",'wb')
+# f_y = open("pkl_files/label_1.pkl",'wb')
 # pickle.dump(y,f_y)
 # f_y.close()
 
@@ -359,6 +359,34 @@ y = pickle.load(y_f)
 train_df_f.close()
 test_df_f.close()
 y_f.close()
+
+image_date = pd.read_csv("input/listing_image_time.csv")
+
+# rename columns so you can join tables later on
+image_date.columns = ["listing_id", "time_stamp"]
+
+# reassign the only one timestamp from April, all others from Oct/Nov
+image_date.loc[80240,"time_stamp"] = 1478129766
+
+image_date["img_date"]                  = pd.to_datetime(image_date["time_stamp"], unit="s")
+image_date["img_days_passed"]           = (image_date["img_date"].max() - image_date["img_date"]).astype("timedelta64[D]").astype(int)
+image_date["img_date_month"]            = image_date["img_date"].dt.month
+image_date["img_date_week"]             = image_date["img_date"].dt.week
+image_date["img_date_day"]              = image_date["img_date"].dt.day
+image_date["img_date_dayofweek"]        = image_date["img_date"].dt.dayofweek
+image_date["img_date_dayofyear"]        = image_date["img_date"].dt.dayofyear
+image_date["img_date_hour"]             = image_date["img_date"].dt.hour
+image_date["img_date_monthBeginMidEnd"] = image_date["img_date_day"].apply(lambda x: 1 if x<10 else 2 if x<20 else 3)
+
+train_df = pd.merge(train_df, image_date, on="listing_id", how="left")
+test_df = pd.merge(test_df, image_date, on="listing_id", how="left")
+
+del train_df['img_date']
+del test_df['img_date']
+
+print train_df
+print test_df
+
 print train_df.dtypes
 print test_df.dtypes
 print len(y)
@@ -386,6 +414,15 @@ print len(y)
 # f = open("res.pkl","w")
 # pickle.dump(res,f)
 
+# f = open('res.pkl','r')
+# res = pickle.load(f)
+# print res
+# res = res.values
+# res = res[:,0]
+# i = 0
+# for line in res:
+#     print i,line
+#     i = i+1
 # grid search
 ################################################################
 # cv_params = {'reg_alpha': [0.05,0.1,0.3,0.5,0.7]}
@@ -420,7 +457,7 @@ print len(y)
 # param['subsample'] = 0.8
 # param['colsample_bytree'] = 0.8
 # param['seed'] = 5
-# num_rounds = 638
+# num_rounds = 650
 # xgtrain = xgb.DMatrix(train_df, label=y)
 # clf = xgb.train(param, xgtrain, num_rounds)
 #
@@ -433,7 +470,7 @@ print len(y)
 #     sub['low'] = preds[:, 0]
 #     sub['medium'] = preds[:, 1]
 #     sub['high'] = preds[:, 2]
-#     sub.to_csv("submission.csv", index=False, header=True)
+#     sub.to_csv("baseline_xgboost_1_submission.csv", index=False, header=True)
 # prepare_submission(clf)
 
 # generating stacking file
@@ -441,7 +478,7 @@ print len(y)
 train_df = train_df.values
 test_df = test_df.values
 
-clf = XGBClassifier(max_depth=9,learning_rate=0.02,n_estimators=638,objective='multi:softprob',gamma=0.2,min_child_weight=5,subsample=0.8,colsample_bytree=0.8,reg_alpha=0.3)
+clf = XGBClassifier(max_depth=9,learning_rate=0.02,n_estimators=650,objective='multi:softprob',gamma=0.2,min_child_weight=5,subsample=0.8,colsample_bytree=0.8,reg_alpha=0.3)
 
 stacking_values = np.zeros((len(y),3),dtype=float)
 
@@ -456,3 +493,5 @@ for i,(train,test) in enumerate(skf):
     clf.fit(X_train, y_train)
     y_submission = clf.predict_proba(X_test)
     stacking_values[test] = y_submission
+
+np.savetxt('baseline_xgboost_1_stacking.csv',stacking_values,fmt='%f')

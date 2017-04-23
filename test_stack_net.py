@@ -16,7 +16,7 @@ sub['low'] = preds[:, 0]
 sub['medium'] = preds[:, 1]
 sub['high'] = preds[:, 2]
 print sub
-sub.to_csv("submission.csv", index=False, header=True)
+sub.to_csv("baseline_xgboost_1_submission.csv", index=False, header=True)
 
 # print '++++++++++++++++++++++++++++++++++++++++++++'
 # is_it_lit = pd.read_csv('baseline_xgboost_1.csv')
@@ -26,4 +26,4 @@ sub.to_csv("submission.csv", index=False, header=True)
 # sub = pd.DataFrame(sub)
 # submit = sub.groupby(by='listing_id').mean()
 # print submit
-# submit.to_csv("submission.csv", index=True, header=True)
+# submit.to_csv("baseline_xgboost_1_submission.csv", index=True, header=True)

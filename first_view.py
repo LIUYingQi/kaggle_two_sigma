@@ -97,4 +97,4 @@ for i, (train, test) in enumerate(skf):
 # sub['low'] = preds[:, 0]
 # sub['medium'] = preds[:, 1]
 # sub['high'] = preds[:, 2]
-# sub.to_csv("submission.csv", index=False, header=True)
+# sub.to_csv("baseline_xgboost_1_submission.csv", index=False, header=True)

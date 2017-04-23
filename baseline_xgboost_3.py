@@ -10,8 +10,6 @@ from scipy import sparse
 train_file = '../input/train.json'
 test_file = '../input/test.json'
 
-
-
 train = pd.read_json(train_file)
 test = pd.read_json(test_file)
 listing_id = test.listing_id.values
