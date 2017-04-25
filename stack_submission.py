@@ -23,7 +23,7 @@ print '++++++++++++++++++++++++++++++++++++++++++++'
 is_it_lit = pd.read_csv('it_is_lit.csv')
 is_it_lit_2 = pd.read_csv('is_it_lit_branden.csv')
 print is_it_lit
-sub = pd.concat([sub,is_it_lit,is_it_lit_2],axis=0,ignore_index=True)
+sub = pd.concat([sub,sub,sub,sub,sub,sub,is_it_lit,is_it_lit_2],axis=0,ignore_index=True)
 print sub
 sub = pd.DataFrame(sub)
 submit = sub.groupby(by='listing_id').mean()
